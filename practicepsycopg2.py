@@ -13,6 +13,13 @@
 4. Use a variable name to fetch them all back
 
 """
+
+## 4 main questions so far:
+#1. In my basic trials (line 36-38, it only returns one column, instead of all columns)
+#2. I don't understand how adding this header line (50) makes the for loop leave out the header line when running through the csv
+#3. I'm completely stuck on the index error on the readcsv.. I thought the for loop would handle that.
+#4. My plan is to create the dictionary directly from the csv, then pass the dictionary into my sql queries. Is that a good approach?
+
 import psycopg2
 import csv
 
