@@ -49,8 +49,8 @@ def readcsv(filename):
 ## Why does adding this header line make the for loop not write out the header row in my dictionary?
 		headers = reader.next()
 		petdictionary = {}
-# Why is this giving an index error? Shouldn't the for loop stop at the end of the file?
 		for row in reader:			
+			if not row: continue
 			petdictionary[row[0]] = row[1:]
 			print "am adding dictionary value '{}'".format(row[1:])
 			print petdictionary.keys()
