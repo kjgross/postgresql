@@ -15,39 +15,33 @@
 """
 
 ## 4 main questions so far:
-#1. In my basic trials (line 36-38, it only returns one column, instead of all columns)
-#2. I don't understand how adding this header line (50) makes the for loop leave out the header line when running through the csv
 #3. I'm completely stuck on the index error on the readcsv.. I thought the for loop would handle that.
 #4. My plan is to create the dictionary directly from the csv, then pass the dictionary into my sql queries. Is that a good approach?
 
 import psycopg2
 import csv
 
-try:
-	conn=psycopg2.connect("dbname='pets'")
-except:
-	print "I am unable to connect to the database."
-
+conn=psycopg2.connect("dbname='pets'")
 cur = conn.cursor()
-try: 
-## Why do these only return one column? There should be many columns returned.
-	#cur.execute("""SELECT * from breed left outer join species on breed.species_id = species.id """)
-	#cur.execute("""SELECT s.speciesname, s.species_id, b.breedname, b.id from species s join breed b on species.id = breed.species_id """)
-	cur.execute("Select * from breed")
-except:
-	print "I can't SELECT from person."
 
-rows = cur.fetchall()
-print "\nRows: \n"
-for row in rows:
-	print "  ", row[1]
+## This code is for making sure my connection is sound
+# try: 
+# 	#cur.execute("""SELECT * from breed left outer join species on breed.species_id = species.id """)
+# 	#cur.execute("""SELECT s.speciesname, s.species_id, b.breedname, b.id from species s join breed b on species.id = breed.species_id """)
+# 	#cur.execute("Select * from breed")
+# except:
+# 	print "I can't SELECT from person."
+
+# rows = cur.fetchall()
+# print "\nRows: \n"
+# for row in rows:
+# 	print "  ", row
 
 def readcsv(filename):
 	""" Read the CSV and create a dictionary where name is the key for the values (tuple)"""
 	with open(filename, "r") as f:
 		reader = csv.reader(f)
-## Why does adding this header line make the for loop not write out the header row in my dictionary?
-		headers = reader.next()
+		headers = next(reader)
 		petdictionary = {}
 		for row in reader:			
 			if not row: continue
@@ -62,6 +56,15 @@ def addpet(petdictionary, headers):
 	# Name, age, breed name, species name, shelter name, adopted
 	# pet table has columns:
 	#  id | name | age | adopted | dead | breed_id | shelter_id
+
+	# Name, age, adopted I can fill in without checking anything
+	# ID will be determined on inserting the first time
+	# dead will stay null
+	# species_id will have to be determined based on species name (tho not inserted, still need to do to make breed work properly)
+	# then breed_id will have to be determined based on breed name
+	# shelter id will be determined by shelter name
+
+	
 	query = ('insert into pet (%s) VALUES (%s)' % 
 		(','.join('%s' % c for c in headers),
 		','.join('%%(%s)s' % c for c in headers)))
