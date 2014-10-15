@@ -13,6 +13,13 @@
 4. Use a variable name to fetch them all back
 
 """
+
+## 4 main questions so far:
+#1. In my basic trials (line 36-38, it only returns one column, instead of all columns)
+#2. I don't understand how adding this header line (50) makes the for loop leave out the header line when running through the csv
+#3. I'm completely stuck on the index error on the readcsv.. I thought the for loop would handle that.
+#4. My plan is to create the dictionary directly from the csv, then pass the dictionary into my sql queries. Is that a good approach?
+
 import psycopg2
 import csv
 
@@ -39,26 +46,55 @@ def readcsv(filename):
 	""" Read the CSV and create a dictionary where name is the key for the values (tuple)"""
 	with open(filename, "r") as f:
 		reader = csv.reader(f)
+## Why does adding this header line make the for loop not write out the header row in my dictionary?
+		headers = reader.next()
 		petdictionary = {}
-## Need to skip the header row
-		for row in reader:
+# Why is this giving an index error? Shouldn't the for loop stop at the end of the file?
+		for row in reader:			
 			petdictionary[row[0]] = row[1:]
 			print "am adding dictionary value '{}'".format(row[1:])
 			print petdictionary.keys()
-	return petdictionary
+	return headers, petdictionary
+
+
+def addpet(petdictionary, headers):
+	# petdictionary has columns: 
+	# Name, age, breed name, species name, shelter name, adopted
+	# pet table has columns:
+	#  id | name | age | adopted | dead | breed_id | shelter_id
+	query = ('insert into pet (%s) VALUES (%s)' % 
+		(','.join('%s' % c for c in headers),
+		','.join('%%(%s)s' % c for c in headers)))
+
+	cursor.execute(query, petdictionary)
+
+
+
+
+
+
+
+
+
+
 
 # ## In this section, I'll need to do capitalization normalization.
 
-def addnewspecies(speciesname, filename):
-	""" Add new species if it's not already in our system"""
-	if cur.execute("select * from species where name = speciesname") == '':
-		try:
-			cur.execute("insert into species (name) values ('speciesname')")
-			print "Adding '{}' to our db.".format(speciesname)
-		except:
-			print "Couldn't insert into species"
-	else:
-		print "'{}' is already a species in our db.".format(speciesname)
+# def addnewspecies(speciesname, filename):
+# 	""" Add new species if it's not already in our system"""
+# 	sqlquery = "select * from %s where %s = speciesname"
+# 	cur.executemany("""INSERT INTO species(name) VALUES (%(speciesname)s)""", petdictionary)
+
+
+
+# 	if cur.execute(sqlquery, species, speciesname) == '':
+# 		try:
+# 			#cur.execute("""insert into species (name) values (%(speciesname)s)""",petdictionary)
+# 			print "Adding '{}' to our db.".format(speciesname)
+# 		except:
+# 			print "Couldn't insert into species"
+# 	else:
+# 		print "'{}' is already a species in our db.".format(speciesname)
 
 # def addnewbreed(breedname, species, filename):
 # 	""" Add new breed if it's not already in our system"""
