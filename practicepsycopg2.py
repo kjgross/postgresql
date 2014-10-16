@@ -7,16 +7,12 @@
 """
 
 """
-1. Create the try to connect, except area
+1. Connect to database
 2. Define a cursor
 3. Within the cursor, execute a query
 4. Use a variable name to fetch them all back
 
 """
-
-## 4 main questions so far:
-#3. I'm completely stuck on the index error on the readcsv.. I thought the for loop would handle that.
-#4. My plan is to create the dictionary directly from the csv, then pass the dictionary into my sql queries. Is that a good approach?
 
 import psycopg2
 import csv
@@ -24,7 +20,7 @@ import csv
 conn=psycopg2.connect("dbname='pets'")
 cur = conn.cursor()
 
-## This code is for making sure my connection is sound
+## This code is for making sure my connection is sound. It now works!
 # try: 
 # 	#cur.execute("""SELECT * from breed left outer join species on breed.species_id = species.id """)
 # 	#cur.execute("""SELECT s.speciesname, s.species_id, b.breedname, b.id from species s join breed b on species.id = breed.species_id """)
@@ -48,10 +44,62 @@ def readcsv(filename):
 			petdictionary[row[0]] = row[1:]
 			print "am adding dictionary value '{}'".format(row[1:])
 			print petdictionary.keys()
-	return headers, petdictionary
+	return petdictionary
+
+def readcsv2(filename):
+	with open(filename, "r") as f:
+		petdictionary2 = csv.DictReader(f)
+	return petdictionary2
 
 
-def addpet(petdictionary, headers):
+"""
+Headers looks like:
+{'Name': ['age', 'breedname', 'species name', 'shelter name', 'adopted']}
+Dictionary looks like"
+{'Titchy': ['12','mixed','cat','BCSPCA', '1'], 
+'Ginger': ['1', 'labradoodle', 'dog', '', '1'],
+etc., }
+
+I think I want my dictionary to look like (dictionary of dictionaries):
+petdictionary = {
+"Titchy": {Name": "Titchy", "age": "12", "breedname": "mixed", "species name": "cat", "shelter name": "BCSPCA", "adopted":"1"}
+,"Ginger": {"Name":Ginger", "age":"1", "breedname": "labradoodle", "species name": "dog", "shelter name": "", "adopted":"1"}
+ }
+"""
+
+def main():
+	#newdata = raw_input("what file do you want to insert?")
+	print "welcome"
+	#addnewspecies('fish',"pets_to_add.csv")
+	#petdictionary1 = readcsv("pets_to_add.csv")
+	petdictionary2 = readcsv2("pets_to_add.csv")
+	"""
+	petdictionary1 = {"Titchy":{"Name": "Titchy", "age": "12", "breedname": "mixed", "species name": "cat", "shelter name": "BCSPCA", "adopted": "1"},
+"Ginger":{"Name": "Ginger", "age": "1", "breedname": "labradoodle", "species name": "dog", "shelter name": "", "adopted": "1"}
+}
+"""
+	print "just read that guy"
+	for line in petdictionary2:
+		print line["Name"]
+	print "query time"
+## This isn't inserting..  but it runs ok.
+	#query = ('insert into pet (name, age, adopted) VALUES (%(Name)s, %(age)s, %(adopted)s)') 
+	#cur.execute(query, petdictionary1["Titchy"])
+
+## code runs, but nothing is actually inserted
+	cur.execute("INSERT INTO pet (name) VALUES (%s)", ('speckles',))
+
+	print "query done, check your db"
+	#addnewspecies(species, newdata)
+	#addnewbreed(breed, species, newdata)
+	#addnewshelter(sheltername, newdata)
+
+
+
+
+def addpetname(headers, petdictionary):
+	pass
+	#namequery = ('insert into pet (%s) Values (%s)' % (name, Name))
 	# petdictionary has columns: 
 	# Name, age, breed name, species name, shelter name, adopted
 	# pet table has columns:
@@ -65,11 +113,7 @@ def addpet(petdictionary, headers):
 	# shelter id will be determined by shelter name
 
 	
-	query = ('insert into pet (%s) VALUES (%s)' % 
-		(','.join('%s' % c for c in headers),
-		','.join('%%(%s)s' % c for c in headers)))
 
-	cursor.execute(query, petdictionary)
 
 
 
@@ -130,17 +174,7 @@ def addpet(petdictionary, headers):
 
 
 
-def main():
-	#newdata = raw_input("what file do you want to insert?")
-	print "welcome"
-	#addnewspecies('fish',"pets_to_add.csv")
-	readcsv("pets_to_add.csv")
-	print "just read that guy"
-	print petdictionary.keys()
-	print "bye bye"
-	#addnewspecies(species, newdata)
-	#addnewbreed(breed, species, newdata)
-	#addnewshelter(sheltername, newdata)
+
 
 
 
