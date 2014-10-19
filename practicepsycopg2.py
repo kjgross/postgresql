@@ -14,11 +14,93 @@
 
 """
 
+	#namequery = ('insert into pet (%s) Values (%s)' % (name, Name))
+	# petdictionary has columns: 
+	# Name, age, breed name, species name, shelter name, adopted
+	# pet table has columns:
+	#  id | name | age | adopted | dead | breed_id | shelter_id
+
+	# Name, age, adopted I can fill in without checking anything
+	# ID will be determined on inserting the first time
+	# dead will stay null
+	# species_id will have to be determined based on species name (tho not inserted, still need to do to make breed work properly)
+	# then breed_id will have to be determined based on breed name
+	# shelter id will be determined by shelter name
+
+
+
 import psycopg2
 import csv
 
-conn=psycopg2.connect("dbname='pets'")
-cur = conn.cursor()
+def main2(filename):
+
+	with open(filename, "r") as f:
+
+		reader = csv.DictReader(f, skipinitialspace = True)
+
+		conn=psycopg2.connect("dbname='pets'")
+		cur = conn.cursor()
+
+		for row in reader:
+			print "going through a new pet"
+			# add the name into pet, creating the new row
+			cur.execute("INSERT INTO pet (name) VALUES (%(Name)s) RETURNING id", row)
+			rowpet_id = cur.fetchone()
+
+			# add age if it exists
+			if row["age"]:
+				cur.execute("UPDATE pet SET age = (%(age)s) WHERE id = (%(id)s)", {'age': row["age"], 'id': rowpet_id})
+
+			# add adopted if it exists
+			if row["adopted"]:
+				cur.execute("UPDATE pet SET adopted = (%(adopted)s) WHERE id = (%(id)s)", {'adopted': row["adopted"], 'id': rowpet_id})
+
+			# add the shelter id if it exists
+			if row["shelter name"]:
+				cur.execute("SELECT id from shelter WHERE UPPER(name) = UPPER(%(sheltername)s)", {'sheltername':row["shelter name"]})
+				if not cur.fetchone():
+					cur.execute("INSERT INTO shelter (name) VALUES (%(sheltername)s) RETURNING id", {'sheltername':row["shelter name"]})
+				cur.execute("UPDATE pet SET shelter_id = (SELECT id from shelter WHERE UPPER(name) = UPPER(%(sheltername)s)) WHERE id = (%(id)s)", {'sheltername':row['shelter name'], 'id': rowpet_id})
+
+			# If species name not in species, add that. 
+			# Then, if breed name not in breed, add that with its species id. Finally update pet.
+			if row["species name"]:
+				cur.execute("SELECT id from species WHERE UPPER(name) = UPPER(%(speciesname)s)", {'speciesname':row["species name"]})
+				if not cur.fetchone():
+					cur.execute("INSERT INTO species (name) VALUES (%(speciesname)s) RETURNING id", {'speciesname':row["species name"]})
+
+			if row["breed name"]:
+				cur.execute("SELECT id from breed WHERE UPPER(name) = UPPER(%(breedname)s)", {'breedname':row["breed name"]})
+				if not cur.fetchone():
+					cur.execute("INSERT INTO breed (name, species_id) VALUES (%(breedname)s, SELECT id FROM species WHERE UPPER(name) = UPPER(%(speciesname)s))", {'breedname':row['breed name'], 'speciesname':row['species name']})
+				
+			if row["breed name"] and row["species name"]:
+				print "I SHOULD BE UPDATING PETS"
+				cur.execute("SELECT id from breed WHERE UPPER(name) = UPPER(%(breedname)s)", {'breedname':row['breed name']})
+				rowbreed_id = cur.fetchone()
+				cur.execute("UPDATE pet SET breed_id = (%(breedid)s) where id = (%(id)s)", {'breedid':rowbreed_id, 'id':rowpet_id})
+
+
+			conn.commit()
+			print "Done with that pet"
+
+	cur.close()
+	conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## This code is for making sure my connection is sound. It now works!
 # try: 
@@ -47,6 +129,7 @@ def readcsv(filename):
 	return petdictionary
 
 def readcsv2(filename):
+# If go this route, must iterate over row in csv	
 	with open(filename, "r") as f:
 		petdictionary2 = csv.DictReader(f)
 	return petdictionary2
@@ -66,6 +149,8 @@ petdictionary = {
 ,"Ginger": {"Name":Ginger", "age":"1", "breedname": "labradoodle", "species name": "dog", "shelter name": "", "adopted":"1"}
  }
 """
+
+
 
 def main():
 	#newdata = raw_input("what file do you want to insert?")
@@ -88,7 +173,7 @@ def main():
 
 ## code runs, but nothing is actually inserted
 	cur.execute("INSERT INTO pet (name) VALUES (%s)", ('speckles',))
-
+# con.commit
 	print "query done, check your db"
 	#addnewspecies(species, newdata)
 	#addnewbreed(breed, species, newdata)
@@ -97,87 +182,7 @@ def main():
 
 
 
-def addpetname(headers, petdictionary):
-	pass
-	#namequery = ('insert into pet (%s) Values (%s)' % (name, Name))
-	# petdictionary has columns: 
-	# Name, age, breed name, species name, shelter name, adopted
-	# pet table has columns:
-	#  id | name | age | adopted | dead | breed_id | shelter_id
-
-	# Name, age, adopted I can fill in without checking anything
-	# ID will be determined on inserting the first time
-	# dead will stay null
-	# species_id will have to be determined based on species name (tho not inserted, still need to do to make breed work properly)
-	# then breed_id will have to be determined based on breed name
-	# shelter id will be determined by shelter name
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-# ## In this section, I'll need to do capitalization normalization.
-
-# def addnewspecies(speciesname, filename):
-# 	""" Add new species if it's not already in our system"""
-# 	sqlquery = "select * from %s where %s = speciesname"
-# 	cur.executemany("""INSERT INTO species(name) VALUES (%(speciesname)s)""", petdictionary)
-
-
-
-# 	if cur.execute(sqlquery, species, speciesname) == '':
-# 		try:
-# 			#cur.execute("""insert into species (name) values (%(speciesname)s)""",petdictionary)
-# 			print "Adding '{}' to our db.".format(speciesname)
-# 		except:
-# 			print "Couldn't insert into species"
-# 	else:
-# 		print "'{}' is already a species in our db.".format(speciesname)
-
-# def addnewbreed(breedname, species, filename):
-# 	""" Add new breed if it's not already in our system"""
-# 	if cur.execute("select * from breed where name = breedname") == '':
-# 		try:
-#			cur.execute("insert into breed (name, species_id) values ('breedname', (select id from species where name = species)")
-#			print "Adding '{}' to our db.".format(breedname)
-#		except:
-#			print "Couldn't insert into breed"
-# 	else:
-# 		print "'{}' is already a breed in our db.".format('breedname')
-
-
-# def addnewshelter(sheltername, filename):
-# 	""" Add new shelter if it's not already in our system"""
-# 	if cur.execute("select * from shelter where name = sheltername") == '':
-#		try:
-# 			cur.execute("insert into shelter (name) values ('sheltername')")
-#			print "Adding '{}' to our db.".format(sheltername)
-#		except:
-#			print "Couldn't insert into shelter"
-# 	else:
-# 		print "'{}' is already a species in our db.".format(sheltername)
-
-
-
-# def write():
-# 	""" Write the contents of the dictionary out to new rows in the pets DB"""
-# 	# Will use new breed/species foreign keys created in checkfornewcontent()
-
-
-
-
-
-
 
 if __name__ == "__main__":
-	main()
+	main2('pets_to_add.csv')
 
